@@ -224,18 +224,24 @@ private extension BracedSyntax {
     }
 
     func violationCorrection(_ locationConverter: SourceLocationConverter) -> ViolationCorrection? {
-        if let previousToken = leftBrace.previousToken(viewMode: .sourceAccurate) {
-            let previousLocation = previousToken.endLocation(converter: locationConverter)
-            let leftBraceLocation = leftBrace.startLocation(converter: locationConverter)
-            if previousLocation.line != leftBraceLocation.line
-               || previousLocation.column + 1 != leftBraceLocation.column {
-                return ViolationCorrection(
-                    start: previousToken.endPositionBeforeTrailingTrivia,
-                    end: leftBrace.positionAfterSkippingLeadingTrivia,
-                    replacement: " "
-                )
-            }
+        guard let previousToken = leftBrace.previousToken(viewMode: .sourceAccurate) else {
+            return nil
         }
+
+        let previousLocation = previousToken.endLocation(converter: locationConverter)
+        let leftBraceLocation = leftBrace.startLocation(converter: locationConverter)
+
+        let leftBraceIsInSameLine = previousLocation.line == leftBraceLocation.line
+        let leftBraceHasOneLeadingSpace = previousLocation.column + 1 == leftBraceLocation.column
+
+        if !leftBraceIsInSameLine || !leftBraceHasOneLeadingSpace {
+            return ViolationCorrection(
+                start: previousToken.endPositionBeforeTrailingTrivia,
+                end: leftBrace.positionAfterSkippingLeadingTrivia,
+                replacement: " "
+            )
+        }
+
         return nil
     }
 }
